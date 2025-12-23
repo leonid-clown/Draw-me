@@ -1,75 +1,94 @@
+-- Rayfield Library Yükleme
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Menü Penceresi Oluşturma
 local Window = Rayfield:CreateWindow({
-   Name = "Oto Cizim v3 (Rayfield)",
-   LoadingTitle = "Yukleniyor...",
+   Name = "Leonid Resim Galerisi v1.0",
+   LoadingTitle = "Gorseller Yukleniyor...",
    LoadingSubtitle = "by Leonid",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "OtoCizimConfig",
-      FileName = "CizimMenu"
+      FolderName = "LeonidDraw",
+      FileName = "Config"
    },
-   Discord = {
-      Enabled = false,
-      Invite = "",
-      RememberJoins = true
-   },
-   KeySystem = false -- Anahtar sistemi kapalı
+   KeySystem = false
 })
 
-local Tab = Window:CreateTab("Cizim", 4483362458) -- Çizim sekmesi
+-- SENİN ÖZEL RESİM LİSTEN (Buraya her zaman yeni ekleme yapabilirsin)
+local ResimListesi = {
+    {
+        Name = "Psycho Vince", 
+        URL = "https://raw.githubusercontent.com/leonid-clown/Draw-me/main/vince.json"
+    },
+    {
+        Name = "Janet", 
+        URL = "https://raw.githubusercontent.com/leonid-clown/Draw-me/main/janet.json"
+    },
+    {
+        Name = "Pixel Kedi", 
+        URL = "https://raw.githubusercontent.com/leonid-clown/Draw-me/main/kedi.json"
+    }
+}
 
-local imageUrl = ""
+-- Ana Sekme
+local Tab = Window:CreateTab("Galeri", 4483362458)
 
-Tab:CreateInput({
-   Name = "Resim URL",
-   PlaceholderText = "PNG/JPG Linki Yapistir",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
-      imageUrl = Text
-   end,
-})
+-- Listeyi Menüye Otomatik Ekleme
+for _, resim in pairs(ResimListesi) do
+    local Section = Tab:CreateSection(resim.Name)
+    
+    Tab:CreateButton({
+       Name = "Cizimi Baslat (Draw)",
+       Callback = function()
+          Rayfield:Notify({
+             Title = "Cizim Basladi!",
+             Content = resim.Name .. " su an ciziliyor. Lutfen bekleyin.",
+             Duration = 5,
+             Image = 4483362458,
+          })
 
-Tab:CreateButton({
-   Name = "Cizimi Baslat",
-   Callback = function()
-      if imageUrl == "" then return end
-      
-      -- Rayfield Bildirimi
-      Rayfield:Notify({
-         Title = "Baslatildi",
-         Content = "Cizim islemi basliyor, lutfen bekleyin.",
-         Duration = 3,
-         Image = 4483362458,
-      })
+          -- Veriyi GitHub'dan Çekme
+          local success, response = pcall(function() 
+             return game:HttpGet(resim.URL) 
+          end)
 
-      -- API ve Cizim Mantigi
-      local apiUrl = "https://api.img2pixel.com/convert?url=" .. imageUrl
-      local success, response = pcall(function() return game:HttpGet(apiUrl) end)
+          if success then
+             local data = game:GetService("HttpService"):JSONDecode(response)
+             
+             -- Oyunun çizim sistemini bulma (Farklı oyunlar için alternatifler)
+             local drawEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Draw") 
+                               or game:GetService("ReplicatedStorage"):FindFirstChild("DrawEvent")
+                               or game:GetService("ReplicatedStorage"):FindFirstChild("Paint")
 
-      if success then
-         local data = game:GetService("HttpService"):JSONDecode(response)
-         local drawEvent = game:GetService("ReplicatedStorage"):FindFirstChild("DrawEvent") 
-         
-         for _, pixel in pairs(data) do
-            if drawEvent then
-               drawEvent:FireServer(Vector2.new(pixel.x, pixel.y), Color3.fromHex(pixel.hex))
-            end
-            task.wait(0.04)
-         end
-      end
-   end,
-})
+             if not drawEvent then
+                Rayfield:Notify({Title = "Hata", Content = "Oyunun cizim sistemi bulunamadi!", Duration = 5})
+                return
+             end
 
-Tab:CreateSection("Ayarlar")
+             -- Çizim Döngüsü
+             for i, p in pairs(data) do
+                -- Renkleri RGB formatında gönderir
+                local color = Color3.fromRGB(p.r, p.g, p.b)
+                drawEvent:FireServer(Vector2.new(p.x, p.y), color)
+                
+                -- Her 10 pikselde bir çok kısa bekleme (Anticheat'e takılmamak için)
+                if i % 10 == 0 then
+                   task.wait(0.01)
+                end
+             end
+             
+             Rayfield:Notify({Title = "Bitti!", Content = resim.Name .. " tamamlandi.", Duration = 3})
+          else
+             Rayfield:Notify({Title = "Hata", Content = "GitHub'dan veri cekilemedi!", Duration = 5})
+          end
+       end,
+    })
+end
 
-Tab:CreateKeybind({
-   Name = "Menuyu Kapat/Ac",
-   CurrentKeybind = "RightControl",
-   HoldToInteract = false,
-   Flag = "MenuToggle",
-   Callback = function(Keybind)
-      -- Rayfield otomatik olarak tuş atamasını yapar
-   end,
+-- Menüyü Kapatma Tuşu Bildirimi
+Rayfield:Notify({
+   Title = "Hazir!",
+   Content = "Sag Control tusu ile menuyu gizleyebilirsin.",
+   Duration = 5
 })
 
