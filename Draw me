@@ -1,0 +1,40 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Mobil Oto Cizim", "DarkTheme")
+
+local Tab = Window:NewTab("Ayarlar")
+local Section = Tab:NewSection("Resim Cizdirici")
+
+local imageUrl = ""
+
+Section:NewTextBox("Resim URL Gir", "PNG veya JPG linki yapıştır", function(txt)
+    imageUrl = txt
+end)
+
+Section:NewButton("Cizimi Baslat", "Resmi piksellere doker ve cizer", function()
+    if imageUrl == "" then print("Lutfen bir link girin!") return end
+    
+    -- API Servisi (Resmi piksellere donusturur)
+    -- NOT: Bu API linki temsilidir, calisan bir image-to-json servisi gerektirir.
+    local apiUrl = "https://api.img2pixel.com/convert?url=" .. imageUrl
+    
+    local success, response = pcall(function()
+        return game:HttpGet(apiUrl)
+    end)
+
+    if success then
+        local data = game:GetService("HttpService"):JSONDecode(response)
+        
+        -- OYUNUN EVENT'INI BULMA (Ornek: Free Draw 2 veya Draw Me)
+        local drawEvent = game:GetService("ReplicatedStorage"):FindFirstChild("DrawEvent") 
+        
+        for _, pixel in pairs(data) do
+            -- pixel.x, pixel.y, pixel.color
+            if drawEvent then
+                drawEvent:FireServer(Vector2.new(pixel.x, pixel.y), Color3.fromHex(pixel.hex))
+            end
+            task.wait(0.05) -- Mobilde kasmamasi icin gecikme
+        end
+    else
+        warn("Hata: Resim verisi alinamadı.")
+    end
+end)
