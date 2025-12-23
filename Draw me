@@ -1,64 +1,65 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Leonid Master Galeri",
-   LoadingTitle = "HD Görseller Hazırlanıyor...",
+   Name = "Leonid Drawing Hub v5",
+   LoadingTitle = "Loading Gallery...",
    ConfigurationSaving = { Enabled = false }
 })
 
--- TÜM VERİLER VE ID'LER SENİN İÇİN EŞLEŞTİRİLDİ
-local ResimListesi = {
+-- Image Database (Organized and Clean)
+local ImageLibrary = {
     {
         Name = "GigaChad HD", 
-        URL = "https://rentry.co/gigachad_data/raw", 
-        ImageID = "rbxassetid://100767434959682"
+        DataURL = "https://rentry.co/gigachad_data/raw", 
+        AssetID = 100767434959682
     },
     {
-        Name = "Psycho Vince (Original)", 
-        URL = "https://rentry.co/vince_data/raw",
-        ImageID = "rbxassetid://103478372698783" -- Senin verdiğin ID'lerden biriyle eşleşti
+        Name = "Psycho Vince", 
+        DataURL = "https://rentry.co/vince_data/raw",
+        AssetID = 103478372698783
     },
     {
-        Name = "Janet (Original)", 
-        URL = "https://rentry.co/janet_data/raw",
-        ImageID = "rbxassetid://78213107256210" -- Senin verdiğin ID'lerden biriyle eşleşti
+        Name = "Janet", 
+        DataURL = "https://rentry.co/janet_data/raw",
+        AssetID = 78213107256210
     },
     {
-        Name = "Özel Karakter 1", 
-        URL = "https://rentry.co/data_resim1/raw",
-        ImageID = "rbxassetid://86054612464800"
+        Name = "Custom Character 1", 
+        DataURL = "https://rentry.co/data_resim1/raw",
+        AssetID = 86054612464800
     },
     {
-        Name = "Özel Karakter 2", 
-        URL = "https://rentry.co/data_resim2/raw",
-        ImageID = "rbxassetid://115307876136806"
+        Name = "Custom Character 2", 
+        DataURL = "https://rentry.co/data_resim2/raw",
+        AssetID = 115307876136806
     },
     {
-        Name = "Özel Karakter 3", 
-        URL = "https://rentry.co/data_resim3/raw",
-        ImageID = "rbxassetid://76695795643588"
+        Name = "Custom Character 3", 
+        DataURL = "https://rentry.co/data_resim3/raw",
+        AssetID = 76695795643588
     }
 }
 
-local Tab = Window:CreateTab("🎨 Resim Seç", 4483362458)
+local MainTab = Window:CreateTab("Gallery", 4483362458)
 
-for _, resim in pairs(ResimListesi) do
-    local Section = Tab:CreateSection(resim.Name)
+for _, item in pairs(ImageLibrary) do
+    local Section = MainTab:CreateSection(item.Name)
     
-    -- Menüde resmi gösterir
-    Tab:CreateLabel("Görsel:", resim.ImageID)
+    -- Preview Label with AssetID
+    MainTab:CreateLabel("Preview:", "rbxassetid://" .. tostring(item.AssetID))
     
-    Tab:CreateButton({
-       Name = "🖌️ " .. resim.Name .. " Çizimini Başlat",
+    MainTab:CreateButton({
+       Name = "Start Drawing: " .. item.Name,
        Callback = function()
           Rayfield:Notify({
-             Title = resim.Name, 
-             Content = "Veri sunucudan alınıyor, lütfen bekleyin...", 
-             Duration = 4,
-             Image = resim.ImageID
+             Title = "Drawing Started", 
+             Content = "Downloading pixels for " .. item.Name, 
+             Duration = 3,
+             Image = item.AssetID
           })
           
-          local success, response = pcall(function() return game:HttpGet(resim.URL) end)
+          local success, response = pcall(function() return game:HttpGet(item.DataURL) end)
+          
           if success and response ~= "" then
              local data = game:GetService("HttpService"):JSONDecode(response)
              local drawEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Draw") or game:GetService("ReplicatedStorage"):FindFirstChild("DrawEvent")
@@ -66,15 +67,15 @@ for _, resim in pairs(ResimListesi) do
              if drawEvent then
                 for i, p in pairs(data) do
                    drawEvent:FireServer(Vector2.new(p.x, p.y), Color3.fromRGB(p.r, p.g, p.b))
-                   -- Kaliteli çizim ve anticheat koruması için bekleme
+                   -- Optimization to prevent kicks/lag
                    if i % 30 == 0 then task.wait(0.01) end
                 end
-                Rayfield:Notify({Title = "Bitti!", Content = "Çizim başarıyla tamamlandı.", Duration = 3})
+                Rayfield:Notify({Title = "Finished", Content = "Drawing complete!", Duration = 3})
              else
-                Rayfield:Notify({Title = "Sistem Hatası", Content = "Oyunun çizim sistemi bulunamadı!", Duration = 5})
+                Rayfield:Notify({Title = "System Error", Content = "RemoteEvent not found in this game!", Duration = 5})
              end
           else
-             Rayfield:Notify({Title = "Hata", Content = "Resim verisi indirilemedi!", Duration = 5})
+             Rayfield:Notify({Title = "Network Error", Content = "Failed to fetch data from server!", Duration = 5})
           end
        end,
     })
