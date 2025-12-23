@@ -1,83 +1,97 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
 
-local Window = Rayfield:CreateWindow({
-   Name = "Leonid Drawing Hub v5",
-   LoadingTitle = "Loading Gallery...",
-   ConfigurationSaving = { Enabled = false }
+local Window = OrionLib:MakeWindow({
+    Name = "Leonid Art Gallery", 
+    HidePremium = false, 
+    SaveConfig = false, 
+    ConfigFolder = "LeonidGallery",
+    IntroEnabled = true,
+    IntroText = "Loading Gallery..."
 })
 
--- Image Database (Organized and Clean)
-local ImageLibrary = {
+local GalleryTab = Window:MakeTab({
+    Name = "Images",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- VERİ VE ID EŞLEŞTİRME LİSTESİ
+local Images = {
     {
-        Name = "GigaChad HD", 
-        DataURL = "https://rentry.co/gigachad_data/raw", 
-        AssetID = 100767434959682
+        Name = "GigaChad",
+        ID = "100767434959682",
+        Link = "https://rentry.co/gigachad_data/raw" -- Çalışıyor
     },
     {
-        Name = "Psycho Vince", 
-        DataURL = "https://rentry.co/vince_data/raw",
-        AssetID = 103478372698783
+        Name = "Psycho Vince",
+        ID = "103478372698783",
+        Link = "https://rentry.co/vince_data/raw" -- Çalışıyor
     },
     {
-        Name = "Janet", 
-        DataURL = "https://rentry.co/janet_data/raw",
-        AssetID = 78213107256210
+        Name = "Janet",
+        ID = "78213107256210",
+        Link = "https://rentry.co/janet_data/raw" -- Çalışıyor
     },
     {
-        Name = "Custom Character 1", 
-        DataURL = "https://rentry.co/data_resim1/raw",
-        AssetID = 86054612464800
+        Name = "Custom Art 1 (Pinterest)",
+        ID = "86054612464800",
+        Link = "https://rentry.co/gigachad_data/raw" -- Test için geçici veri
     },
     {
-        Name = "Custom Character 2", 
-        DataURL = "https://rentry.co/data_resim2/raw",
-        AssetID = 115307876136806
+        Name = "Custom Art 2 (Encrypted)",
+        ID = "115307876136806",
+        Link = "https://rentry.co/gigachad_data/raw" -- Test için geçici veri
     },
     {
-        Name = "Custom Character 3", 
-        DataURL = "https://rentry.co/data_resim3/raw",
-        AssetID = 76695795643588
+        Name = "Custom Art 3 (Small)",
+        ID = "76695795643588",
+        Link = "https://rentry.co/gigachad_data/raw" -- Test için geçici veri
     }
 }
 
-local MainTab = Window:CreateTab("Gallery", 4483362458)
-
-for _, item in pairs(ImageLibrary) do
-    local Section = MainTab:CreateSection(item.Name)
+-- OTOMATİK BUTON OLUŞTURUCU
+for _, img in pairs(Images) do
+    GalleryTab:AddLabel("Preview ID: " .. img.ID)
     
-    -- Preview Label with AssetID
-    MainTab:CreateLabel("Preview:", "rbxassetid://" .. tostring(item.AssetID))
-    
-    MainTab:CreateButton({
-       Name = "Start Drawing: " .. item.Name,
-       Callback = function()
-          Rayfield:Notify({
-             Title = "Drawing Started", 
-             Content = "Downloading pixels for " .. item.Name, 
-             Duration = 3,
-             Image = item.AssetID
-          })
-          
-          local success, response = pcall(function() return game:HttpGet(item.DataURL) end)
-          
-          if success and response ~= "" then
-             local data = game:GetService("HttpService"):JSONDecode(response)
-             local drawEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Draw") or game:GetService("ReplicatedStorage"):FindFirstChild("DrawEvent")
+    GalleryTab:AddButton({
+        Name = "Draw: " .. img.Name,
+        Callback = function()
+            OrionLib:MakeNotification({
+                Name = "Downloading...",
+                Content = "Fetching data for " .. img.Name,
+                Image = "rbxassetid://" .. img.ID,
+                Time = 3
+            })
 
-             if drawEvent then
-                for i, p in pairs(data) do
-                   drawEvent:FireServer(Vector2.new(p.x, p.y), Color3.fromRGB(p.r, p.g, p.b))
-                   -- Optimization to prevent kicks/lag
-                   if i % 30 == 0 then task.wait(0.01) end
+            local success, response = pcall(function() return game:HttpGet(img.Link) end)
+            
+            if success then
+                local data = game:GetService("HttpService"):JSONDecode(response)
+                local drawEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Draw") or game:GetService("ReplicatedStorage"):FindFirstChild("DrawEvent") or game:GetService("ReplicatedStorage"):FindFirstChild("Paint")
+
+                if drawEvent then
+                    OrionLib:MakeNotification({
+                        Name = "Drawing Started",
+                        Content = "Please wait while drawing...",
+                        Time = 3
+                    })
+                    
+                    for i, p in pairs(data) do
+                        drawEvent:FireServer(Vector2.new(p.x, p.y), Color3.fromRGB(p.r, p.g, p.b))
+                        -- Hız ayarı (Düşürürsen hızlanır, artırırsan güvenli olur)
+                        if i % 50 == 0 then task.wait(0.01) end
+                    end
+                    
+                    OrionLib:MakeNotification({Name = "Success", Content = "Drawing Finished!", Time = 3})
+                else
+                    OrionLib:MakeNotification({Name = "Error", Content = "RemoteEvent not found!", Time = 5})
                 end
-                Rayfield:Notify({Title = "Finished", Content = "Drawing complete!", Duration = 3})
-             else
-                Rayfield:Notify({Title = "System Error", Content = "RemoteEvent not found in this game!", Duration = 5})
-             end
-          else
-             Rayfield:Notify({Title = "Network Error", Content = "Failed to fetch data from server!", Duration = 5})
-          end
-       end,
+            else
+                OrionLib:MakeNotification({Name = "Error", Content = "Failed to load JSON data!", Time = 5})
+            end
+        end
     })
 end
+
+OrionLib:Init()
 
