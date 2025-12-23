@@ -1,20 +1,26 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Mobil Oto Cizim", "DarkTheme")
 
-local Tab = Window:NewTab("Ayarlar")
-local Section = Tab:NewSection("Resim Cizdirici")
+-- Menü Boyutu ve Başlık (Daha küçük ve kompakt)
+local Window = Library.CreateLib("Oto Cizim v2", "DarkTheme")
+
+-- KÜÇÜLTME / BÜYÜTME (Toggle) TUŞU
+-- Sağ alt köşede küçük bir buton oluşturur, menüyü gizler/açar
+Library:ToggleGui() 
+
+local Tab = Window:NewTab("Cizim")
+local Section = Tab:NewSection("Resim Ayarlari")
 
 local imageUrl = ""
 
-Section:NewTextBox("Resim URL Gir", "PNG veya JPG linki yapıştır", function(txt)
+-- Küçük kutu ve butonlar
+Section:NewTextBox("Resim URL", "Link yapistir", function(txt)
     imageUrl = txt
 end)
 
-Section:NewButton("Cizimi Baslat", "Resmi piksellere doker ve cizer", function()
-    if imageUrl == "" then print("Lutfen bir link girin!") return end
+Section:NewButton("Cizimi Baslat", "Cizmeye baslar", function()
+    if imageUrl == "" then return end
     
-    -- API Servisi (Resmi piksellere donusturur)
-    -- NOT: Bu API linki temsilidir, calisan bir image-to-json servisi gerektirir.
+    -- API Servisi (Temsili - Calismasi icin gecerli bir API URL'si gerekir)
     local apiUrl = "https://api.img2pixel.com/convert?url=" .. imageUrl
     
     local success, response = pcall(function()
@@ -23,18 +29,18 @@ Section:NewButton("Cizimi Baslat", "Resmi piksellere doker ve cizer", function()
 
     if success then
         local data = game:GetService("HttpService"):JSONDecode(response)
-        
-        -- OYUNUN EVENT'INI BULMA (Ornek: Free Draw 2 veya Draw Me)
         local drawEvent = game:GetService("ReplicatedStorage"):FindFirstChild("DrawEvent") 
         
         for _, pixel in pairs(data) do
-            -- pixel.x, pixel.y, pixel.color
             if drawEvent then
                 drawEvent:FireServer(Vector2.new(pixel.x, pixel.y), Color3.fromHex(pixel.hex))
             end
-            task.wait(0.05) -- Mobilde kasmamasi icin gecikme
+            task.wait(0.05)
         end
-    else
-        warn("Hata: Resim verisi alinamadı.")
     end
 end)
+
+Section:NewKeybind("Menuyu Gizle/Ac", "Klavye veya butonla gizler", Enum.KeyCode.RightControl, function()
+    Library:ToggleGui()
+end)
+
